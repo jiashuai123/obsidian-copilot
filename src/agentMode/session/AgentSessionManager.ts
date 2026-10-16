@@ -4,6 +4,7 @@ import type {
   FeedbackOfferHandler,
 } from "@/agentMode/session/feedback/feedbackMcpServer";
 import { resolveEffort } from "@/lib/model-effort";
+import { isIgnisRuntime } from "@/utils/ignisRuntime";
 import { logError, logInfo, logWarn } from "@/logger";
 import type CopilotPlugin from "@/main";
 import { AgentChatUIState } from "@/agentMode/session/AgentChatUIState";
@@ -785,7 +786,7 @@ export class AgentSessionManager {
     const errorSeqAtStart = this.lastErrorSeq;
     const descriptor = this.resolveDescriptor(resolvedId);
     const resolvedSeed = seedSelection ?? this.getSeedSelection(resolvedId) ?? undefined;
-    if (!resolvedSeed && descriptor.routesCopilotModels) {
+    if (!isIgnisRuntime() && !resolvedSeed && descriptor.routesCopilotModels) {
       const message = `Enable a model for ${descriptor.displayName} in Copilot's model settings to start a chat.`;
       this.setLastError(message);
       this.notify();
