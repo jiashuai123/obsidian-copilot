@@ -17,6 +17,7 @@ import {
   useSessionBackendDescriptor,
 } from "@/agentMode/ui/useBackendDescriptor";
 import { logError } from "@/logger";
+import { isIgnisRuntime } from "@/utils/ignisRuntime";
 import React from "react";
 import type CopilotPlugin from "@/main";
 
@@ -49,11 +50,11 @@ export function useAgentSelect(
   const rows = React.useMemo(
     () =>
       buildAgentSelectRows(descriptors, states, RECOMMENDED_BACKEND_ID).map((row) => {
-        // Installation stays authoritative; only an installed selected agent
-        // needs its sign-in checked before exposing Start chat.
-        // https://github.com/Brevilabs/obsidian-copilot-private/issues/532
         if (row.id !== selectedId || row.status !== "installed" || !selectedDescriptor.auth)
           return row;
+        if (isIgnisRuntime()) {
+          return row;
+        }
         if (auth.checking || auth.status === null) return { ...row, status: "checking" as const };
         if (!auth.status.signedIn)
           return {

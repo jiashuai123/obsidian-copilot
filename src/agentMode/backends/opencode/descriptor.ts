@@ -1,4 +1,5 @@
 import { Notice } from "obsidian";
+import { isIgnisRuntime } from "@/utils/ignisRuntime";
 import { OPENCODE_PINNED_VERSION, OPENCODE_MIN_VERSION } from "./ui/opencodeVersion";
 import { resolveEffort } from "@/lib/model-effort";
 import { OpencodeInstallModal } from "@/agentMode/backends/opencode/OpencodeInstallModal";
@@ -107,6 +108,9 @@ export const OpencodeBackendDescriptor: BackendDescriptor = {
   },
 
   getInstallState(settings: CopilotSettings): InstallState {
+    if (isIgnisRuntime()) {
+      return { kind: "ready", source: "managed" };
+    }
     return toOpencodeInstallState(computeInstallState(settings.agentMode?.backends?.opencode));
   },
 
