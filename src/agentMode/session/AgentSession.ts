@@ -1,4 +1,5 @@
 import { AI_SENDER, USER_SENDER, WEB_SELECTED_TEXT_TAG } from "@/constants";
+import { isIgnisRuntime } from "@/utils/ignisRuntime";
 import { logInfo, logWarn } from "@/logger";
 import { AgentMessageStore } from "@/agentMode/session/AgentMessageStore";
 import { GLOBAL_SCOPE, type ProjectScopeId } from "@/agentMode/session/scope";
@@ -443,8 +444,8 @@ export class AgentSession {
     );
     if (this.disposed) return;
     const { target } = pick();
-    if (!target) throw noEnabledModelError(descriptor.displayName);
-    await descriptor.applySelection(this, target);
+    if (!target && !isIgnisRuntime()) throw noEnabledModelError(descriptor.displayName);
+    if (target) await descriptor.applySelection(this, target);
     await replayPersistedMode(this, mode);
   }
 
