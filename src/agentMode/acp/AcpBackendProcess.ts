@@ -18,6 +18,8 @@ import {
 } from "@agentclientprotocol/sdk";
 import { App, FileSystemAdapter } from "obsidian";
 import { AcpProcessManager, AcpProcessManagerOptions } from "./AcpProcessManager";
+import { AcpIgnisGatewayProcess } from "./AcpIgnisGatewayProcess";
+import { isIgnisRuntime } from "@/utils/ignisRuntime";
 import { VaultClient } from "./VaultClient";
 import { JSONRPC_METHOD_NOT_FOUND, MethodUnsupportedError } from "@/agentMode/session/errors";
 import type {
@@ -93,7 +95,7 @@ interface SessionWireState {
 }
 
 export class AcpBackendProcess implements BackendProcess {
-  private process: AcpProcessManager | null = null;
+  private process: AcpProcessManager | AcpIgnisGatewayProcess | null = null;
   private connection: ClientConnection | null = null;
   private readonly domainHandlers = new Map<SessionId, DomainSessionUpdateHandler>();
   private readonly pendingUpdates = new Map<SessionId, SessionNotification[]>();
@@ -125,23 +127,35 @@ export class AcpBackendProcess implements BackendProcess {
 
   async start(): Promise<void> {
     if (this.connection) return;
-    const adapter = this.app.vault.adapter;
-    if (!(adapter instanceof FileSystemAdapter)) {
-      throw new Error("Agent Mode requires desktop Obsidian (FileSystemAdapter).");
-    }
-    const descriptor = await this.backend.buildSpawnDescriptor({
-      vaultBasePath: adapter.getBasePath(),
-      vaultName: this.app.vault.getName(),
-    });
+    let proc: AcpProcessManager | AcpIgnisGatewayProcess;
 
-    const procOpts: AcpProcessManagerOptions = {
-      command: descriptor.command,
-      args: descriptor.args,
-      cwd: descriptor.cwd,
-      env: descriptor.env,
-      logTag: this.backend.id,
-    };
-    const proc = new AcpProcessManager(procOpts);
+    if (isIgnisRuntime()) {
+      proc = new AcpIgnisGatewayProcess({
+        backend: this.backend.id,
+        vaultId: (window as unknown as { __currentVaultId?: string }).__currentVaultId ?? "",
+        logTag: this.backend.id,
+      });
+    } else {
+      const adapter = this.app.vault.adapter;
+
+      if (!(adapter instanceof FileSystemAdapter)) {
+        throw new Error("Agent Mode requires desktop Obsidian (FileSystemAdapter).");
+      }
+
+      const descriptor = await this.backend.buildSpawnDescriptor({
+        vaultBasePath: adapter.getBasePath(),
+        vaultName: this.app.vault.getName(),
+      });
+
+      const procOpts: AcpProcessManagerOptions = {
+        command: descriptor.command,
+        args: descriptor.args,
+        cwd: descriptor.cwd,
+        env: descriptor.env,
+        logTag: this.backend.id,
+      };
+      proc = new AcpProcessManager(procOpts);
+    }
     this.process = proc;
     const raw = proc.start();
     const { stdin, stdout } = wrapStreamsForDebug(raw.stdin, raw.stdout, this.backend.id);

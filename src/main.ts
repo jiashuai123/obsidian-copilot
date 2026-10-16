@@ -94,6 +94,7 @@ import { buildUpgradeRelocationEntries } from "@/settings/upgradeNotice";
 import { dehydrateDeviceProfile, hydrateDeviceProfile } from "@/settings/deviceProfiles";
 import { getDeviceId } from "@/utils/deviceId";
 import { isDesktopRuntime } from "@/utils/desktopRuntime";
+import { isIgnisRuntime } from "@/utils/ignisRuntime";
 import { disposeNotificationSound } from "@/utils/notificationSound";
 import { installRendererEventsShim } from "@/utils/rendererEventsShim";
 import { ContextProcessor } from "@/contextProcessor";
@@ -312,14 +313,16 @@ export default class CopilotPlugin extends Plugin implements CopilotStartup {
     }
     if (!this.pluginLifecycleActive) return;
 
-    this.register(
-      startReleaseUpdateCheck(
-        this.app,
-        this.manifest.version,
-        getSettings().lastShownStartupVersion,
-        (version) => updateSetting("lastShownStartupVersion", version)
-      )
-    );
+    if (!isIgnisRuntime()) {
+      this.register(
+        startReleaseUpdateCheck(
+          this.app,
+          this.manifest.version,
+          getSettings().lastShownStartupVersion,
+          (version) => updateSetting("lastShownStartupVersion", version)
+        )
+      );
+    }
     void cleanupLegacyIndexArtifacts({
       adapter: this.app.vault.adapter,
       configDir: this.app.vault.configDir,
