@@ -8,7 +8,7 @@ export function getCopilotSaveData(app: App): (data: CopilotSettings) => Promise
         getPlugin: (id: string) => { saveData: (data: CopilotSettings) => Promise<void> } | null;
       };
     };
-    const copilotPlugin = plugins.getPlugin("copilot");
+    const copilotPlugin = plugins.getPlugin("copilot-ignis") ?? plugins.getPlugin("copilot");
     if (!copilotPlugin) throw new Error("Copilot plugin not found");
     await copilotPlugin.saveData(data);
   };
