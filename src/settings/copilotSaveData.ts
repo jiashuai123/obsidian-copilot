@@ -8,7 +8,15 @@ export function getCopilotSaveData(app: App): (data: CopilotSettings) => Promise
         getPlugin: (id: string) => { saveData: (data: CopilotSettings) => Promise<void> } | null;
       };
     };
-    const copilotPlugin = plugins.getPlugin("copilot-ignis") ?? plugins.getPlugin("copilot");
+    const virtual = (
+      app as unknown as {
+        __ignis?: { plugins?: Record<string, { instance?: unknown }> };
+      }
+    )?.__ignis?.plugins?.["copilot-ignis"]?.instance as
+      | { saveData: (data: CopilotSettings) => Promise<void> }
+      | undefined;
+    const copilotPlugin =
+      virtual ?? plugins.getPlugin("copilot-ignis") ?? plugins.getPlugin("copilot");
     if (!copilotPlugin) throw new Error("Copilot plugin not found");
     await copilotPlugin.saveData(data);
   };

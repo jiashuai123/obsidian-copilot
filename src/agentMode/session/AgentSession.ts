@@ -471,6 +471,7 @@ export class AgentSession {
   }
 
   private isOnModelNotEnabled(): boolean {
+    if (isIgnisRuntime()) return false;
     const current = this.currentState?.model?.current.baseModelId;
     return (
       this.runsOnlyEnabledModels() &&
